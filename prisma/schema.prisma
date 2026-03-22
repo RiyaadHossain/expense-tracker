@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+}
+
+enum CategoryType {
+  FOOD
+  GROCERIES
+  TRANSPORT
+  OTHER
+  UNKNOWN
+}
+
+enum PaymentMethodType {
+  CASH
+  BANK
+  CARD
+  MOBILE_WALLET
+  OTHER
+}
+
+enum SourcePlatform {
+  TELEGRAM
+  WEB
+  API
+}
+
+enum ParseStatus {
+  AUTO_SAVED
+  CONFIRMED
+  EDITED
+  MANUAL
+  FAILED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  fullName     String?
+  timezone     String   @default("Asia/Dhaka")
+  baseCurrency String   @default("BDT")
+  locale       String   @default("en-BD")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  messagingAccounts MessagingAccount[]
+  categories        Category[]
+  paymentMethods    PaymentMethod[]
+  transactions      Transaction[]
+  parseEvents       ParseEvent[]
+}
+
+model MessagingAccount {
+  id             String         @id @default(uuid())
+  userId         String
+  platform       SourcePlatform
+  platformUserId String
+  platformChatId String
+  username       String?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([platform, platformUserId])
+  @@unique([platform, platformChatId])
+  @@index([userId])
+}
+
+model Category {
+  id               String       @id @default(uuid())
+  userId           String?
+  name             String
+  type             CategoryType
+  icon             String?
+  color            String?
+  isDefault        Boolean      @default(false)
+  parentCategoryId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentCategory Category?     @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  children       Category[]    @relation("CategoryHierarchy")
+  transactions   Transaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([parentCategoryId])
+}
+
+model PaymentMethod {
+  id        String            @id @default(uuid())
+  userId    String?
+  name      String
+  type      PaymentMethodType
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Transaction {
+  id     String          @id @default(uuid())
+  userId String
+  type   TransactionType
+
+  amountOriginal   Decimal @db.Decimal(14, 2)
+  currencyOriginal String  @default("BDT")
+
+  amountBase   Decimal @db.Decimal(14, 2)
+  currencyBase String  @default("BDT")
+
+  categoryId      String
+  paymentMethodId String?
+
+  transactionAt DateTime
+  note          String?
+  description   String?
+
+  incomeSource String?
+  merchant     String?
+
+  sourcePlatform  SourcePlatform
+  sourceMessageId String?
+  rawInputText    String?
+
+  parseConfidence Decimal?    @db.Decimal(4, 2)
+  parseStatus     ParseStatus @default(MANUAL)
+
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([paymentMethodId])
+  @@index([transactionAt])
+  @@index([type])
+  @@index([sourcePlatform])
+}
+
+model ParseEvent {
+  id             String         @id @default(uuid())
+  userId         String?
+  rawText        String
+  normalizedText String?
+  platform       SourcePlatform
+  extractedJson  Json?
+  finalJson      Json?
+  confidence     Decimal?       @db.Decimal(4, 2)
+  status         ParseStatus
+  createdAt      DateTime       @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([platform])
+  @@index([createdAt])
+}

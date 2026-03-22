@@ -4,9 +4,10 @@
   "main": "src/server.ts",
   "license": "MIT",
   "author": "Riyad Hossain",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "checks": "tsx watch src/telegram/testBotConnection.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
@@ -14,6 +15,7 @@
     "prisma:studio": "prisma studio"
   },
   "devDependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",

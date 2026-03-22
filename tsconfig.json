@@ -5,12 +5,12 @@
     "outDir": "./dist",
 
     // Environment Settings
-    "module": "CommonJS",
+    "module": "esnext",
     "moduleResolution": "node",
-    "target": "ES2022",
+    "target": "esnext",
 
     // For Node.js
-    "lib": ["ES2022"],
+    "lib": ["ES2023"],
     "types": ["node"],
 
     // Interop / JSON
