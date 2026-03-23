@@ -3,15 +3,22 @@ import { Telegraf } from "telegraf";
 export function registerHelpCommand(bot: Telegraf) {
   bot.help(async (ctx) => {
     await ctx.reply(
-      `Available commands:\n\n` +
-        `/start - Start the bot and see examples\n` +
-        `/help - Show command help\n` +
-        `/cost <amount> <note> - Quick expense entry\n` +
-        `/income <amount> <note> - Quick income entry\n` +
-        `/report - Show your summary report\n\n` +
-        `Examples:\n` +
-        `/cost 300 transport\n` +
-        `/income 50000 salary`,
+      `📚 *Expense Tracker Bot Commands*\n\n` +
+        `💸 *Expense*\n` +
+        `• \`/cost 500 groceries\`\n` +
+        `• \`/cost 300 transport cash\`\n\n` +
+        `💰 *Income*\n` +
+        `• \`/income 50000 salary\`\n` +
+        `• \`/income 12000 freelance\`\n\n` +
+        `📊 *Reports*\n` +
+        `• \`/report\`\n\n` +
+        `📝 *Natural text examples*\n` +
+        `• Spent 500 on groceries today\n` +
+        `• Received 50000 salary\n\n` +
+        `🚀 More features coming soon!`,
+      {
+        parse_mode: "Markdown",
+      },
     );
   });
 }

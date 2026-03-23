@@ -45,7 +45,7 @@ export async function findOrCreateMessagingAccount(
       where: { id: existing.id },
       data: {
         platformChatId: String(payload.chatId),
-        username: payload.username,
+        username: payload.username || 'unknown',
         isActive: true,
       },
     });
@@ -57,7 +57,7 @@ export async function findOrCreateMessagingAccount(
       platform: SourcePlatform.TELEGRAM,
       platformUserId: String(payload.telegramUserId),
       platformChatId: String(payload.chatId),
-      username: payload.username,
+      username: payload.username || 'unknown',
       isActive: true,
     },
   });
