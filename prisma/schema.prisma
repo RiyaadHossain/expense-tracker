@@ -148,6 +148,8 @@ model Transaction {
   sourceMessageId String?
   rawInputText    String?
 
+  tags String?
+
   parseConfidence Decimal?    @db.Decimal(4, 2)
   parseStatus     ParseStatus @default(AUTO_SAVED)
 

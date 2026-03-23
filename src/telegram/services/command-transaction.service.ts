@@ -7,7 +7,7 @@ import {
 import {
   findOrCreateUserFromTelegram,
   findOrCreateMessagingAccount,
-} from "./telegram-message.service";
+} from "./message.service";
 import { TelegramMessagePayload } from "../telegram.types";
 
 interface CreateTelegramCommandTransactionInput {

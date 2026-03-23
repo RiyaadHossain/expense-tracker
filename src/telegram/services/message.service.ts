@@ -1,32 +1,9 @@
 import { prisma } from "../../config/db.config";
 import { ParseStatus, SourcePlatform } from "../../generated/prisma/enums";
 import { TelegramMessagePayload } from "../telegram.types";
+import { findOrCreateUserFromTelegram } from "./user.service";
 
-export async function findOrCreateUserFromTelegram(
-  payload: TelegramMessagePayload,
-) {
-  const syntheticEmail = `tg_${payload.telegramUserId}@telegram.local`;
 
-  let user = await prisma.user.findUnique({
-    where: { email: syntheticEmail },
-  });
-
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: syntheticEmail,
-        fullName:
-          [payload.firstName, payload.lastName].filter(Boolean).join(" ") ||
-          null,
-        timezone: "Asia/Dhaka",
-        baseCurrency: "BDT",
-        locale: "en-BD",
-      },
-    });
-  }
-
-  return user;
-}
 
 export async function findOrCreateMessagingAccount(
   userId: string,

@@ -23,6 +23,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@google/genai": "^1.46.0",
     "@prisma/client": "^7.5.0",
     "chrono-node": "^2.9.0",
     "cors": "^2.8.6",

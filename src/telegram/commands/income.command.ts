@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { TransactionType } from "../../generated/prisma/enums";
-import { createTransactionFromTelegramCommand } from "../services/telegram-command-transaction.service";
+import { createTransactionFromTelegramCommand } from "../services/command-transaction.service";
 
 function parseIncomeCommand(input: string) {
   const parts = input.trim().split(/\s+/);

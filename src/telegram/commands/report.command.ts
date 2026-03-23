@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { TransactionType } from "../../generated/prisma/enums";
-import { findUserByTelegramUserId } from "../services/telegram-user.service";
+import { findUserByTelegramUserId } from "../services/user.service";
 import { getTelegramUserReport } from "../services/report.service";
 
 function formatAmount(amount: number) {

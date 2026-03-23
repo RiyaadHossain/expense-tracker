@@ -1,56 +1,32 @@
 import { Telegraf } from "telegraf";
-import { ingestTelegramMessage } from "../services/telegram-message.service";
-import { processParseEventToTransaction } from "../services/telegram-transaction.service";
+import { processTelegramMessageWithAI } from "../../ai/orchestration/message-orchestrator.service";
 
 export function registerTextMessageHandler(bot: Telegraf) {
   bot.on("text", async (ctx) => {
     const text = ctx.message.text;
 
-    // Ignore slash commands
+    // Ignore slash commands here
     if (text.startsWith("/")) return;
 
     try {
-      const result = await ingestTelegramMessage({
+      const result = await processTelegramMessageWithAI({
         telegramUserId: ctx.from.id,
         chatId: ctx.chat.id,
         username: ctx.from.username || "unknown",
-        firstName: ctx.from.first_name || "Anonymous",
-        lastName: ctx.from.last_name || "User",
+        firstName: ctx.from.first_name || "Unknown",
+        lastName: ctx.from.last_name || "",
         text,
       });
 
-      const processed = await processParseEventToTransaction(
-        result.parseEvent.id,
-      );
-
-      if (!processed.success) {
-        await ctx.reply(
-          `⚠️ I saved your message, but I couldn't fully understand it.\n\n` +
-            `Reason: ${processed.reason}\n\n` +
-            `Try examples like:\n` +
-            `- Spent 500 on groceries\n` +
-            `- Uber 350\n` +
-            `- Received 50000 salary`,
-        );
-        return;
-      }
-
-      const { transaction, category } = processed;
-
-      const typeLabel = transaction?.type === "EXPENSE" ? "Expense" : "Income";
-
-      await ctx.reply(
-        `✅ ${typeLabel} saved successfully!\n\n` +
-          `💰 Amount: ${transaction?.amount} BDT\n` +
-          `📂 Category: ${category?.name}\n` +
-          `📝 Note: ${transaction?.note || "-"}\n`,
-      );
+      await ctx.reply(result.message, {
+        parse_mode: result.parseMode || "Markdown",
+      });
     } catch (error) {
-      console.error("Error handling text message:", error);
+      console.error("AI text handler error:", error);
 
       await ctx.reply(
-        `❌ Something went wrong while processing your message.\n` +
-          `🙃 Please try again.`,
+        `❌ *Something went wrong while processing your message.*\n\nPlease try again.`,
+        { parse_mode: "Markdown" },
       );
     }
   });

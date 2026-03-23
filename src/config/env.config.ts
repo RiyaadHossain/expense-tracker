@@ -17,4 +17,8 @@ export const env = {
   DATABASE_URL: required("DATABASE_URL"),
   TELEGRAM_BOT_TOKEN: process.env["TELEGRAM_BOT_TOKEN"] || "",
   APP_BASE_URL: process.env["APP_BASE_URL"] || "",
+
+  GEMINI_API_KEY: process.env["GEMINI_API_KEY"] || "",
+  GEMINI_MODEL: process.env["GEMINI_MODEL"] || "gemini-2.5-flash",
+  GEMINI_MODEL_PRO: process.env["GEMINI_MODEL_PRO"] || "gemini-2.5-pro",
 };
