@@ -1,21 +1,19 @@
 import { z } from "zod";
+import {
+  AdviceTopic,
+  AiIntent,
+  MissingField,
+  ReportPeriod,
+  TransactionType,
+} from "../ai.types";
 
 export const AiIntentSchema = z.object({
-  intent: z.enum([
-    "CREATE_TRANSACTION",
-    "REPORT",
-    "ADVICE",
-    "HELP",
-    "UPDATE_TRANSACTION",
-    "DELETE_TRANSACTION",
-    "CLARIFY_MISSING_INFO",
-    "UNKNOWN",
-  ]),
+  intent: z.enum(AiIntent),
   confidence: z.number().min(0).max(1),
-
+  
   transaction: z
     .object({
-      type: z.enum(["EXPENSE", "INCOME"]).nullable(),
+      type: z.enum(TransactionType).nullable(),
       amount: z.number().positive().nullable(),
       currency: z.string().nullable(),
       note: z.string().nullable(),
@@ -28,9 +26,7 @@ export const AiIntentSchema = z.object({
 
   report: z
     .object({
-      period: z
-        .enum(["TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH", "CUSTOM"])
-        .nullable(),
+      period: z.enum(ReportPeriod).nullable(),
       customStart: z.string().nullable(),
       customEnd: z.string().nullable(),
       includeRecentTransactions: z.boolean().nullable(),
@@ -39,23 +35,12 @@ export const AiIntentSchema = z.object({
 
   advice: z
     .object({
-      topic: z
-        .enum([
-          "SAVE_MONEY",
-          "COST_CUTTING",
-          "BUDGETING",
-          "INVESTMENT_IDEAS",
-          "SPENDING_ANALYSIS",
-          "GENERAL_FINANCIAL_GUIDANCE",
-        ])
-        .nullable(),
+      topic: z.enum(AdviceTopic).nullable(),
       userQuestion: z.string().nullable(),
     })
     .nullable(),
 
-  missingFields: z.array(
-    z.enum(["amount", "type", "note", "date", "period", "topic", "category"]),
-  ),
+  missingFields: z.array(z.enum(MissingField)),
 
   needsClarification: z.boolean(),
 

@@ -1,13 +1,31 @@
 import { gemini, GEMINI_MODEL } from "../gemini/gemini.client";
+import { prisma } from "../../config/db.config";
 import { AiIntentSchema, type AiIntentResult } from "./ai-intent.schemas";
 
 export async function detectAiIntent(input: {
+  userId?: string;
   message: string;
   timezone?: string;
   currency?: string;
 }): Promise<AiIntentResult> {
+  const [categories, paymentMethods] = await Promise.all([
+    prisma.category.findMany({
+      select: { name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.paymentMethod.findMany({
+      select: { name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  const categoryList =
+    categories.map(({ name }) => name).join(", ") || "None yet";
+  const paymentMethodList =
+    paymentMethods.map(({ name }) => name).join(", ") || "None yet";
+
   const prompt = `
-You are an AI finance assistant for a personal expense tracker Telegram bot.
+You are an AI finance assistant for a Telegram bot.
 
 Your job:
 1. Classify the user's message intent
@@ -25,12 +43,19 @@ Rules:
 - If the user message is ambiguous, set needsClarification=true.
 - If missing important data for transaction creation, set missingFields accordingly.
 - Desired json fields includes amount, currency, category, paymentMethod, date, type, note, description, tags
+- Use an existing category when it clearly fits the transaction.
+- Use an existing payment method when it clearly fits the transaction.
+- If no existing category fits, suggest a new category in transaction.categoryHint.
+- If no existing payment method fits, suggest a new payment method in transaction.paymentMethodHint.
 - If the 'amount' and 'category' are not clear then ask for a clear command with examples.
 - clarificationMessage must be helpful, short, and natural with emojis.
+- If any the amount and category is not clear, then ask for a new message with detailed info including expense type, category, payment method. Also provide an example.
 
 User context:
 - Timezone: ${input.timezone || "Asia/Dhaka"}
 - Default currency: ${input.currency || "BDT"}
+- Existing categories: ${categoryList}
+- Existing payment methods: ${paymentMethodList}
 
 User message:
 "${input.message}"

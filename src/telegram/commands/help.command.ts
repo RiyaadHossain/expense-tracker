@@ -14,7 +14,8 @@ export function registerHelpCommand(bot: Telegraf) {
         `• \`/report\`\n\n` +
         `📝 *Natural text examples*\n` +
         `• Spent 500 on groceries today\n` +
-        `• Received 50000 salary\n\n` +
+        `• Received 50000 salary\n` +
+        `• Show me this month's report\n\n` +
         `🚀 More features coming soon!`,
       {
         parse_mode: "Markdown",

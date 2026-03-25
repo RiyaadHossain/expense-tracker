@@ -1,18 +1,15 @@
+import { generateAdviceReply } from "../advice/advice.service";
 import { detectAiIntent } from "../intent/ai-intent.service";
-import { TransactionType } from "../../generated/prisma/enums";
+import { SourcePlatform, TransactionType } from "../../generated/prisma/enums";
 import type { TelegramMessagePayload } from "../../telegram/telegram.types";
 import { getTelegramUserReport } from "../../telegram/services/report.service";
 import { createTelegramTransaction } from "../../telegram/services/transaction.service";
 import { findOrCreateUserFromTelegram } from "../../telegram/services/user.service";
-
-type OrchestratorResult =
-  | { kind: "reply"; message: string; parseMode?: "Markdown" | "HTML" }
-  | {
-      kind: "transaction_saved";
-      message: string;
-      parseMode: "Markdown" | "HTML";
-    }
-  | { kind: "report"; message: string; parseMode?: "Markdown" | "HTML" };
+import {
+  AiIntent,
+  OrchestratorResult,
+  OrchestratorResultKind,
+} from "../ai.types";
 
 export async function processTelegramMessageWithAI(
   payload: TelegramMessagePayload,
@@ -20,6 +17,7 @@ export async function processTelegramMessageWithAI(
   const user = await findOrCreateUserFromTelegram(payload);
 
   const ai = await detectAiIntent({
+    userId: user.id,
     message: payload.text,
     timezone: user.timezone || "Asia/Dhaka",
     currency: user.baseCurrency || "BDT",
@@ -28,16 +26,16 @@ export async function processTelegramMessageWithAI(
   // 1) Need clarification
   if (ai.needsClarification)
     return {
-      kind: "reply",
+      kind: OrchestratorResultKind.REPLY,
       message:
         ai.clarificationMessage ||
-        "🤔 I need a bit more information to help you. Can you clarify?",
+        "Please try to provide full details (like: Lunch 500 cash)",
       parseMode: "Markdown",
     };
 
   // 2) Transaction creation
   if (
-    ai.intent === "CREATE_TRANSACTION" &&
+    ai.intent === AiIntent.CREATE_TRANSACTION &&
     ai.transaction?.type &&
     ai.transaction?.amount
   ) {
@@ -45,24 +43,26 @@ export async function processTelegramMessageWithAI(
       telegramPayload: payload,
       transaction: {
         type:
-          ai.transaction.type === "EXPENSE"
+          ai.transaction.type === TransactionType.EXPENSE
             ? TransactionType.EXPENSE
             : TransactionType.INCOME,
         amount: ai.transaction.amount,
         description: ai.transaction.description || "AI parsed transaction",
         note: ai.transaction.note || "AI parsed transaction",
         transactionAt: new Date(),
-        categoryName: "General",
-        sourcePlatform: "TELEGRAM",
+        categoryName: ai.transaction.categoryHint || "Generel",
+        sourcePlatform: SourcePlatform.TELEGRAM,
         rawText: payload.text,
       },
     });
 
-    const emoji = ai.transaction.type === "EXPENSE" ? "💸" : "💰";
-    const label = ai.transaction.type === "EXPENSE" ? "Expense" : "Income";
+    const emoji =
+      ai.transaction.type === TransactionType.EXPENSE ? "ðŸ’¸" : "ðŸ’°";
+    const label =
+      ai.transaction.type === TransactionType.EXPENSE ? "Expense" : "Income";
 
     return {
-      kind: "transaction_saved",
+      kind: OrchestratorResultKind.TRANSACTION_SAVED,
       message:
         `${emoji} *${label} saved successfully!*\n\n` +
         `💵 Amount: *${ai.transaction.amount} ${user.baseCurrency || "BDT"}*\n` +
@@ -73,11 +73,11 @@ export async function processTelegramMessageWithAI(
   }
 
   // 3) Report
-  if (ai.intent === "REPORT") {
+  if (ai.intent === AiIntent.REPORT) {
     const report = await getTelegramUserReport(user.id);
 
     return {
-      kind: "report",
+      kind: OrchestratorResultKind.REPORT,
       message:
         `📊 *Quick report generated!*\n\n` +
         `Today expense: *${report.todaySummary.totalExpense} ${user.baseCurrency || "BDT"}*\n` +
@@ -89,20 +89,22 @@ export async function processTelegramMessageWithAI(
   }
 
   // 4) Advice
-  if (ai.intent === "ADVICE") {
+  if (ai.intent === AiIntent.ADVICE) {
     return {
-      kind: "reply",
-      message:
-        `🧠 I understood that you're asking for financial guidance.\n\n` +
-        `Next step: I’ll analyze your transaction history and give personalized advice.`,
+      kind: OrchestratorResultKind.REPLY,
+      message: await generateAdviceReply({
+        userId: user.id,
+        currency: user.baseCurrency || "BDT",
+        question: ai.advice?.userQuestion || payload.text,
+      }),
       parseMode: "Markdown",
     };
   }
 
   return {
-    kind: "reply",
+    kind: OrchestratorResultKind.REPLY,
     message:
-      `🤖 I understood your message, but I’m not fully sure what action to take yet.\n\n` +
+      `ðŸ¤– I understood your message, but Iâ€™m not fully sure what action to take yet.\n\n` +
       `Try:\n` +
       `• \`Spent 500 on groceries\`\n` +
       `• \`Received 12000 freelance payment\`\n` +

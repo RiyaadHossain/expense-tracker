@@ -43,12 +43,12 @@ enum PaymentMethodType {
 enum SourcePlatform {
   TELEGRAM
   WEB
-  API
+  MESSENGER
+  WHATSAPP
 }
 
 enum ParseStatus {
   AUTO_SAVED
-  CONFIRMED
   PARSED
   EDITED
   MANUAL
@@ -140,9 +140,6 @@ model Transaction {
   transactionAt DateTime
   note          String?
   description   String?
-
-  incomeSource String?
-  merchant     String?
 
   sourcePlatform  SourcePlatform
   sourceMessageId String?

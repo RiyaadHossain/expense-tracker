@@ -10,7 +10,8 @@ export function registerStartCommand(bot: Telegraf) {
         `You can log your money in *2 simple ways*:\n\n` +
         `📝 *1) Natural text*\n` +
         `• Spent 500 on groceries today\n` +
-        `• Received 50000 salary\n\n` +
+        `• Received 50000 salary\n` +
+        `• Show me this month's report\n\n` +
         `⌨️ *2) Commands*\n` +
         `• /cost 500 groceries\n` +
         `• /income 50000 salary\n` +

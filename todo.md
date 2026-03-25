@@ -8,5 +8,6 @@
 - Reporting Dashboard Static Design
 - Dashboard APIs
 - Integrate dashboard APIs
+- Integrate Messenger and WhatsApp
 
 - Cost cutting: regex first, Gemini second [optional fallback]

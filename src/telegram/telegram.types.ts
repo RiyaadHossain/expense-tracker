@@ -20,7 +20,6 @@ export interface CreateTelegramTransactionInput {
     currencyCode?: string | null;
     categoryName: string;
     paymentMethodName?: string | null;
-    merchantName?: string | null;
     sourcePlatform: SourcePlatform;
     parseEventId?: string | null;
     tags?: string[];

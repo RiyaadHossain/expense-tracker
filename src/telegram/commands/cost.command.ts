@@ -37,7 +37,7 @@ export function registerCostCommand(bot: Telegraf) {
             `✅ Use something like:\n` +
             `• \`/cost 300 transport cash\`\n` +
             `• \`/cost 500 groceries bkash\`\n\n` +
-            `💡 Format: \`/cost <amount> <note>\``,
+            `💡 Format: \`/cost <amount> <category>\``,
           {
             parse_mode: "Markdown",
           },

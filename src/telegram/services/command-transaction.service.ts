@@ -5,10 +5,10 @@ import {
   TransactionType,
 } from "../../generated/prisma/enums";
 import {
-  findOrCreateUserFromTelegram,
   findOrCreateMessagingAccount,
 } from "./message.service";
 import { TelegramMessagePayload } from "../telegram.types";
+import { findOrCreateUserFromTelegram } from "./user.service";
 
 interface CreateTelegramCommandTransactionInput {
   payload: TelegramMessagePayload;
