@@ -1,6 +1,7 @@
 import { gemini, GEMINI_MODEL } from "../gemini/gemini.client";
 import { prisma } from "../../config/db.config";
 import { AiIntentSchema, type AiIntentResult } from "./ai-intent.schemas";
+import { AdviceTopic, AiIntent, MissingField, ReportPeriod, TransactionType } from "../ai.types";
 
 export async function detectAiIntent(input: {
   userId?: string;
@@ -27,38 +28,34 @@ export async function detectAiIntent(input: {
   const prompt = `
 You are an AI finance assistant for a Telegram bot.
 
-Your job:
-1. Classify the user's message intent
-2. Extract structured fields if possible
-3. If important information is missing, identify it
-4. Return ONLY valid JSON matching the schema
+Classify intent: ${Object.values(AiIntent).join(" | ")}.
 
-Rules:
-- The user may write in English, Bangla, mixed language, shorthand, slang, or messy text.
-- Your reply should align with the user's messageing style.
-- If the message implies spending, classify as CREATE_TRANSACTION with type=EXPENSE.
-- If the message implies receiving money, classify as CREATE_TRANSACTION with type=INCOME.
-- If the user asks for summaries/history, classify as REPORT.
-- If the user asks for savings/budgeting/investment/spending analysis, classify as ADVICE.
-- If the user message is ambiguous, set needsClarification=true.
-- If missing important data for transaction creation, set missingFields accordingly.
-- Desired json fields includes amount, currency, category, paymentMethod, date, type, note, description, tags
-- Use an existing category when it clearly fits the transaction.
-- Use an existing payment method when it clearly fits the transaction.
-- If no existing category fits, suggest a new category in transaction.categoryHint.
-- If no existing payment method fits, suggest a new payment method in transaction.paymentMethodHint.
-- If the 'amount' and 'category' are not clear then ask for a clear command with examples.
-- clarificationMessage must be helpful, short, and natural with emojis.
-- If any the amount and category is not clear, then ask for a new message with detailed info including expense type, category, payment method. Also provide an example.
+Extract structured fields. Set needsClarification=true if ambiguous. Set missingFields if data missing.
+
+Use existing categories/payment methods or suggest new ones in hints.
+
+Return ONLY valid JSON:
+
+{
+  intent,
+  transaction: { type: ${Object.values(TransactionType).join(" | ")}, amount as number, currency, note, description, categoryHint, paymentMethodHint, occurredAtText },
+  report: { period: ${Object.values(ReportPeriod).join(" | ")}, customStart, customEnd, includeRecentTransactions },
+  advice: { topic: ${Object.values(AdviceTopic).join(" | ")}, userQuestion },
+  missingFields as array of ${Object.values(MissingField).join(" | ")},
+  needsClarification,
+  clarificationMessage (add emojis and examples for better UX)
+}
+
+If provided message lacks very clear info about 'intent', 'amount' or 'category' only, set needsClarification=true and specify missingFields.
+In that case clarificationMessage should ask user to provide the complete transaction details in a single sentence, preferably with an example. For example: "Please provide amount and category (e.g. Lunch 500 cash)".
 
 User context:
 - Timezone: ${input.timezone || "Asia/Dhaka"}
 - Default currency: ${input.currency || "BDT"}
-- Existing categories: ${categoryList}
-- Existing payment methods: ${paymentMethodList}
+- Categories: ${categoryList}
+- Payment methods: ${paymentMethodList}
 
-User message:
-"${input.message}"
+Message: "${input.message}"
 
 Return JSON only.
 `;
@@ -74,6 +71,7 @@ Return JSON only.
 
   const raw = response.text?.trim() || "{}";
   const parsed = JSON.parse(raw);
+  console.log({ parsed });
 
   return AiIntentSchema.parse(parsed);
 }

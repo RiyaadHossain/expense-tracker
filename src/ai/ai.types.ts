@@ -52,4 +52,7 @@ export enum MissingField {
   period = "period",
   topic = "topic",
   category = "category",
+  paymentMethod = "paymentMethod",
+  categoryHint = "categoryHint",
+  paymentMethodHint = "paymentMethodHint",
 }

@@ -1,5 +1,5 @@
 import { Telegraf } from "telegraf";
-import { env } from "../config/env.config";
+import { env } from "../../config/env.config";
 import { registerBotModules } from "./register-bot-modules";
 
 export const bot = new Telegraf(env.TELEGRAM_BOT_TOKEN);

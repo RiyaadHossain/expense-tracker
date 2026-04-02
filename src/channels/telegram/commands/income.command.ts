@@ -1,6 +1,7 @@
 import { Telegraf } from "telegraf";
-import { TransactionType } from "../../generated/prisma/enums";
-import { createTransactionFromTelegramCommand } from "../services/command-transaction.service";
+import { TransactionType } from "../../../generated/prisma/enums";
+import { createTransactionFromCommand } from "../../../modules/transactions/transaction.service";
+import { toTelegramMessagingProfile } from "../telegram.types";
 
 function parseIncomeCommand(input: string) {
   const parts = input.trim().split(/\s+/);
@@ -11,10 +12,6 @@ function parseIncomeCommand(input: string) {
   if (Number.isNaN(amount) || amount <= 0) return null;
 
   const remainingParts = parts.slice(1);
-
-  // For MVP:
-  // first word after amount = category
-  // rest = note
   const categoryName = remainingParts[0]?.trim().toLowerCase() || "income";
   const note = remainingParts.join(" ").trim();
 
@@ -25,6 +22,13 @@ function parseIncomeCommand(input: string) {
   };
 }
 
+function formatAmount(amount: number) {
+  return new Intl.NumberFormat("en-BD", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export function registerIncomeCommand(bot: Telegraf) {
   bot.command("income", async (ctx) => {
     try {
@@ -33,11 +37,11 @@ export function registerIncomeCommand(bot: Telegraf) {
 
       if (!parsed) {
         await ctx.reply(
-          `⚠️ *Invalid format!*\n\n` +
-            `✅ Use something like:\n` +
-            `• \`/income 50000 salary\`\n` +
-            `• \`/income 12000 freelance\`\n\n` +
-            `💡 Format: \`/income <amount> <note>\``,
+          `❌ *Invalid format!*\n\n` +
+            `Use something like:\n` +
+            `- \`/income 50000 salary\`\n` +
+            `- \`/income 12000 freelance\`\n\n` +
+            `💡 Format: \`/income <amount> <source> <note>\``,
           {
             parse_mode: "Markdown",
           },
@@ -45,15 +49,15 @@ export function registerIncomeCommand(bot: Telegraf) {
         return;
       }
 
-      const result = await createTransactionFromTelegramCommand({
-        payload: {
+      const result = await createTransactionFromCommand({
+        profile: toTelegramMessagingProfile({
           telegramUserId: ctx.from.id,
           chatId: ctx.chat.id,
           username: ctx.from.username || "unknown",
           firstName: ctx.from.first_name || "Anonymous",
           lastName: ctx.from.last_name || "User",
           text: ctx.message.text,
-        },
+        }),
         rawText: ctx.message.text,
         type: TransactionType.INCOME,
         amount: parsed.amount,
@@ -62,26 +66,25 @@ export function registerIncomeCommand(bot: Telegraf) {
       });
 
       if (!result.success) {
-        await ctx.reply(
-          `❌ Failed to save your income.\n` + `Please try again.`,
-        );
+        await ctx.reply(`❌ Failed to save your income. Please try again.`);
         return;
       }
 
       await ctx.reply(
-        `✅ 💰 Income saved successfully!\n\n` +
-          `💵 Amount: ${result.transaction.amount} BDT\n` +
-          `📂 Category: ${result.category.name}\n` +
+        `✅ *Income saved successfully!*\n\n` +
+          `💵 Amount: 💰 ${formatAmount(Number(result.transaction.amount))} BDT\n` +
+          `🏷️ Category: ${result.category.name}\n` +
           `📝 Note: ${result.transaction.note || "N/A"}\n` +
-          `🆔 Event ID: ${result.parseEvent.id}\n\n` +
-          `🚀 Nice! Your earnings are now tracked too.`,
+          `🆔 Event ID: \`${result.transaction.id}\``,
+        {
+          parse_mode: "Markdown",
+        },
       );
     } catch (error) {
       console.error("Error in /income command:", error);
 
       await ctx.reply(
-        `❌ Something went wrong while saving your income.\n` +
-          `Please try again in a moment.`,
+        `❌ Something went wrong while saving your income. Please try again in a moment.`,
       );
     }
   });

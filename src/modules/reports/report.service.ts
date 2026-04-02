@@ -1,5 +1,5 @@
-import { TransactionType } from "../../generated/prisma/enums";
 import { prisma } from "../../config/db.config";
+import { TransactionType } from "../../generated/prisma/enums";
 
 function getStartOfToday() {
   const now = new Date();
@@ -26,6 +26,7 @@ async function getSummaryByRange(userId: string, start: Date, end: Date) {
     prisma.transaction.aggregate({
       where: {
         userId,
+        isDeleted: false,
         type: TransactionType.EXPENSE,
         transactionAt: {
           gte: start,
@@ -39,10 +40,10 @@ async function getSummaryByRange(userId: string, start: Date, end: Date) {
         _all: true,
       },
     }),
-
     prisma.transaction.aggregate({
       where: {
         userId,
+        isDeleted: false,
         type: TransactionType.INCOME,
         transactionAt: {
           gte: start,
@@ -71,7 +72,7 @@ async function getSummaryByRange(userId: string, start: Date, end: Date) {
   };
 }
 
-export async function getTelegramUserReport(userId: string) {
+export async function getUserReport(userId: string) {
   const todayStart = getStartOfToday();
   const tomorrowStart = getStartOfTomorrow();
   const monthStart = getStartOfMonth();
@@ -80,10 +81,12 @@ export async function getTelegramUserReport(userId: string) {
   const [todaySummary, monthSummary, recentTransactions] = await Promise.all([
     getSummaryByRange(userId, todayStart, tomorrowStart),
     getSummaryByRange(userId, monthStart, nextMonthStart),
-
     prisma.transaction.findMany({
-      where: { userId },
-      orderBy: { transactionAt: "desc" },
+      where: {
+        userId,
+        isDeleted: false,
+      },
+      orderBy: [{ transactionAt: "desc" }, { createdAt: "desc" }],
       take: 5,
       select: {
         id: true,

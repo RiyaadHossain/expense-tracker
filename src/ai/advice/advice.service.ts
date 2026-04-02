@@ -105,6 +105,7 @@ Instructions:
 - Mention 2 to 4 actionable suggestions when the request is finance-related.
 - Avoid giving legal, medical, or unrelated life advice.
 - Use simple Markdown suitable for Telegram.
+- Add relevant emojis so the message feels friendly.
 `;
 
   const response = await gemini.models.generateContent({
@@ -114,6 +115,6 @@ Instructions:
 
   return (
     response.text?.trim() ||
-    "I can help with finance-related advice based on your income and expenses. Ask me about budgeting, saving, or spending analysis."
+    "💡I can help with finance-related advice based on your income and expenses. Ask me about budgeting, saving, or spending analysis."
   );
 }
